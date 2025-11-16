@@ -12,8 +12,8 @@ class TicketingController(
     private val ticketingService: TicketingService
 ) {
     @PostMapping
-    fun reserveTicket(): ResponseEntity<String> {
-        ticketingService.reserveTicket()
+    fun reserveTicket(movieId: Long, memberId: Long): ResponseEntity<String> {
+        ticketingService.reserveTicket(movieId,memberId)
         return ResponseEntity.ok().build()
     }
 
