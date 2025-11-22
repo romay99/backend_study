@@ -12,7 +12,7 @@ open class TransactionHistory(
     @GeneratedValue(strategy = GenerationType.AUTO)
     open var id: Long? = null,
 
-    open var createdAt: LocalDateTime? = null,
+    open var createdAt: LocalDateTime? = LocalDateTime.now(),
 
     @Enumerated(EnumType.STRING)
     open var type: TransactionHistoryType = TransactionHistoryType.SUCCESS,
