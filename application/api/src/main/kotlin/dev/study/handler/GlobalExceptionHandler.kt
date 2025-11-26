@@ -1,6 +1,10 @@
 package dev.study.handler
 
-import dev.study.ticketing.exception.*
+import dev.study.exception.member.MemberNotFoundException
+import dev.study.exception.member.NotEnoughAmountException
+import dev.study.exception.seat.SeatAlreadyOccupiedException
+import dev.study.exception.seat.SeatNotFoundException
+import dev.study.exception.ticketing.TicketingNotStartedException
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.RestControllerAdvice
