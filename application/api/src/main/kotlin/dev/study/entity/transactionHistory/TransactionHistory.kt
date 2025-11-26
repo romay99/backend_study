@@ -17,7 +17,7 @@ import java.time.LocalDateTime
 @Table(name = "transaction_history")
 open class TransactionHistory(
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     open var id: Long? = null,
 
     open var createdAt: LocalDateTime? = LocalDateTime.now(),
