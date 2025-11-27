@@ -1,6 +1,6 @@
 package dev.study.controller.ticketing
 
-import TicketingService
+import dev.study.service.ticketing.TicketingService
 import dev.study.dto.ticketing.TicketingTryDto
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.PostMapping
