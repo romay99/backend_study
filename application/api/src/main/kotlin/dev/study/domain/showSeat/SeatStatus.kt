@@ -1,4 +1,4 @@
-package dev.study.domain.seat
+package dev.study.domain.showSeat
 
 enum class SeatStatus {
     AVAILABLE,

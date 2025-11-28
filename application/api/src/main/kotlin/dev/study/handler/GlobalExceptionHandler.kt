@@ -5,17 +5,21 @@ import dev.study.exception.member.NotEnoughAmountException
 import dev.study.exception.seat.SeatAlreadyOccupiedException
 import dev.study.exception.seat.SeatNotFoundException
 import dev.study.exception.ticketing.TicketingNotStartedException
+import dev.study.logging.logger
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.RestControllerAdvice
 
 @RestControllerAdvice
 class GlobalExceptionHandler {
+
+    private val logger = logger()
     /**
      * 전역 예외 처리
      */
     @ExceptionHandler(Exception::class)
     fun globalExceptionHandler(e: Exception): ResponseEntity<Any> {
+        logger.error("GlobalExceptionHandler: ", e)
         return ResponseEntity.status(500).build()
     }
 
@@ -24,6 +28,7 @@ class GlobalExceptionHandler {
      */
     @ExceptionHandler(TicketingNotStartedException::class)
     fun ticketingNotStartedExceptionHandler(e: TicketingNotStartedException): ResponseEntity<Any> {
+        logger.error("TicketingNotStartedException: ", e)
         return ResponseEntity.status(400).build()
     }
 
@@ -32,6 +37,7 @@ class GlobalExceptionHandler {
      */
     @ExceptionHandler(MemberNotFoundException::class)
     fun memberNotFoundExceptionHandler(e: MemberNotFoundException): ResponseEntity<Any> {
+        logger.error("MemberNotFoundException: ", e)
         return ResponseEntity.status(404).build()
     }
 
@@ -40,6 +46,7 @@ class GlobalExceptionHandler {
      */
     @ExceptionHandler(NotEnoughAmountException::class)
     fun notEnoughAmountExceptionHandler(e: NotEnoughAmountException): ResponseEntity<Any> {
+        logger.error("NotEnoughAmountException: ", e)
         return ResponseEntity.status(400).build()
     }
 
@@ -48,6 +55,7 @@ class GlobalExceptionHandler {
      */
     @ExceptionHandler(SeatAlreadyOccupiedException::class)
     fun seatAlreadyOccupiedExceptionHandler(e: SeatAlreadyOccupiedException): ResponseEntity<Any> {
+        logger.error("SeatAlreadyOccupiedException: ", e)
         return ResponseEntity.status(400).build()
     }
 
@@ -56,6 +64,7 @@ class GlobalExceptionHandler {
      */
     @ExceptionHandler(SeatNotFoundException::class)
     fun seatNotFoundExceptionHandler(e: SeatNotFoundException): ResponseEntity<Any> {
+        logger.error("SeatNotFoundException: ", e)
         return ResponseEntity.status(404).build()
     }
 }

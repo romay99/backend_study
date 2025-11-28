@@ -1,71 +1,55 @@
-import dev.study.entity.member.Member
-import dev.study.repository.member.MemberRepository
-import dev.study.domain.seat.SeatStatus
-import dev.study.repository.seat.SeatRepository
-import dev.study.entity.ticketHistory.TicketHistory
-import dev.study.repository.ticketHistory.TicketHistoryRepository
+package dev.study.service.ticketing
+
+import dev.study.domain.showSeat.SeatStatus
+import dev.study.dto.seat.SeatLockDTO
 import dev.study.dto.ticketing.TicketingTryDto
+import dev.study.entity.member.Member
+import dev.study.entity.showSeat.ShowSeat
+import dev.study.entity.ticketHistory.TicketHistory
+import dev.study.entity.transactionHistory.TransactionHistory
 import dev.study.exception.member.MemberNotFoundException
 import dev.study.exception.member.NotEnoughAmountException
 import dev.study.exception.seat.SeatAlreadyOccupiedException
 import dev.study.exception.seat.SeatNotFoundException
-import dev.study.exception.ticketing.TicketingNotStartedException
-import dev.study.entity.transactionHistory.TransactionHistory
+import dev.study.logging.logger
+import dev.study.repository.member.MemberRepository
+import dev.study.repository.showSeatRepository.ShowSeatRepository
+import dev.study.repository.ticketHistory.TicketHistoryRepository
 import dev.study.repository.transactionHistory.TransactionHistoryRepository
-import jakarta.transaction.Transactional
 import org.redisson.api.RedissonClient
 import org.springframework.stereotype.Service
-import java.time.LocalTime
+import org.springframework.transaction.annotation.Transactional
+import java.time.Duration
 import java.util.concurrent.TimeUnit
 
 @Service
 class TicketingService(
     private val memberRepository: MemberRepository,
     private val ticketHistoryRepository: TicketHistoryRepository,
-    private val seatRepository: SeatRepository,
     private val transactionHistoryRepository: TransactionHistoryRepository,
-    private val redissonClient: RedissonClient
+    private val redissonClient: RedissonClient,
+    private val showSeatRepository: ShowSeatRepository
 ) {
-    private val TICKETING_START_TIME: LocalTime = LocalTime.of(14, 0) // 예매 시작 시간은 14시
-
-    @Transactional
-    fun reserveTicket(dto: TicketingTryDto) {
-        if (LocalTime.now().isBefore(TICKETING_START_TIME)) {
-            // 14 시 이전 요청 예외 발생
-            throw TicketingNotStartedException("티켓 예매는 14시부터 가능합니다.")
-        }
-
-        // 사용자 데이터 가져오기
-        val member: Member = memberRepository.findById(dto.memberId).orElse(null)
-            ?: throw MemberNotFoundException("존재하지 않는 사용자입니다.")
-
-        // 사용자 잔액이 부족할 경우 예외 발생
-        if (member.amount < 15000) throw NotEnoughAmountException("잔액이 충분하지 않습니다.")
-
-        // 좌석 점유하기. redis lock 이용
-        val seat = holdSeat(dto)
-
-        member.amount -= 15000 // 사용자 계좌에서 돈 차감 , Dirty Checking 으로 Update
-
-        // 티켓팅 내역 저장
-        val ticketHistory = TicketHistory(seat = seat, member = member, movie = seat.movie)
-        ticketHistoryRepository.save(ticketHistory)
-
-        // 돈 거래 내역 저장
-        val transactionHistory = TransactionHistory(amount = 15000, member = member)
-        transactionHistoryRepository.save(transactionHistory)
+    companion object {
+        private val TICKET_PRICE = 15000
     }
+    private val logger = logger()
 
     /**
      * 좌석 점유하는 메서드
      */
-    private fun holdSeat(dto: TicketingTryDto) : Seat {
+    @Transactional
+    fun holdSeat(dto: SeatLockDTO) : ShowSeat? {
         val col = dto.col
         val num = dto.num
-        val seat : Seat
+        val memberId = dto.memberId
+        val screenNumber = dto.screenNumber
+        val showSeat : ShowSeat?
+        val movieId = dto.movieId
 
         val lock =
-            redissonClient.getLock("lock:seat:$col:$num") // lock:sear:a:1 <- a1 번 좌석 lock 획득 시도
+            // lock:seat:${movieId}:${screenNumber}:${col}:${num}
+            redissonClient.getLock("lock:seat:$movieId:$screenNumber:$col:$num")
 
         try {
             val locked = lock.tryLock(3,5, TimeUnit.SECONDS) // Lock 획득 대기시간 3초, 획득 성공시 5초 동안 점유
@@ -75,17 +59,72 @@ class TicketingService(
             }
             // 좌석 점유중으로 상태 바꾸기
             // 좌석이 존재하지 않다면 예외 발생
-            seat = seatRepository.findSeatByColAndNum(dto.col, dto.num)
+            showSeat = showSeatRepository.findShowSeat(
+                movieId = dto.movieId,
+                col = dto.col,
+                num = dto.num,
+                screenNumber = dto.screenNumber)
                 ?: throw SeatNotFoundException("존재하지 않는 좌석입니다.")
 
-            seat.status = SeatStatus.RESERVING // 좌석 상태 점유중으로 변경
+            showSeat.status = SeatStatus.RESERVING // 좌석 상태 점유중으로 변경
 
+            // 5분간 TTL 을 이용한 좌석 자동점유를 위한 KEY
+            // 이 KEY 가 만료될때 좌석 점유가 풀린다
+            // hold:seat:${movieId}:${screenNumber}:${col}:${num}
+            val seatKey = "hold:seat:$movieId:$screenNumber:$col:$num"
+            val bucket = redissonClient.getBucket<String>(seatKey)
+            bucket.set(memberId.toString(), Duration.ofMinutes(5))
+            logger.info("hold:seat:$movieId:$screenNumber:$col:$num BY $memberId")
         } finally {
             // 최종적으로 Lock 이 존재한다면 Lock 해제해주기
             if (lock.isHeldByCurrentThread) {
                 lock.unlock()
             }
         }
-        return seat
+        return showSeat
+    }
+
+    @Transactional
+    fun reserveTicket(dto: TicketingTryDto) {
+        val col = dto.col
+        val num = dto.num
+        val memberId = dto.memberId
+        val screenNumber = dto.screenNumber
+        val movieId = dto.movieId
+
+        // 사용자 데이터 가져오기
+        val member: Member = memberRepository.findById(dto.memberId).orElse(null)
+            ?: throw MemberNotFoundException("존재하지 않는 사용자입니다.")
+
+        // 사용자 잔액이 부족할 경우 예외 발생
+        if (member.amount < TICKET_PRICE) throw NotEnoughAmountException("잔액이 충분하지 않습니다.")
+
+        val seatKey = "hold:seat:$movieId:$screenNumber:$col:$num"
+        val bucket = redissonClient.getBucket<String>(seatKey)
+        val value = bucket.get()
+
+        // 좌석 점유 정보가 틀리거나, 다른 사용자가 접근한다면 예외 발생
+        if(value == null || value != memberId.toString()){
+            throw SeatNotFoundException("존재하지 않는 좌석 정보입니다")
+        }
+
+        member.amount -= TICKET_PRICE // 사용자 계좌에서 돈 차감 , Dirty Checking 으로 Update
+
+        val showSeat = showSeatRepository.findShowSeat(movieId, col, num, screenNumber)
+            ?: throw SeatNotFoundException("존재하지 않는 좌석 정보입니다")
+
+        showSeat.status = SeatStatus.RESERVED
+
+        // 티켓팅 내역 저장
+        val ticketHistory = TicketHistory(member = member, movie = showSeat.movie)
+        ticketHistoryRepository.save(ticketHistory)
+
+        // 돈 거래 내역 저장
+        val transactionHistory = TransactionHistory(amount = TICKET_PRICE, member = member)
+        transactionHistoryRepository.save(transactionHistory)
+
+        // redisson key 삭제
+        bucket.delete()
+        logger.info("reserveTicket:$movieId:$screenNumber:$col:$num")
     }
 }
