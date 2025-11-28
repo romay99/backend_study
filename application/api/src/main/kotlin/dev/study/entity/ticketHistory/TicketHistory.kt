@@ -1,18 +1,9 @@
 package dev.study.entity.ticketHistory
 
-import Seat
-import dev.study.entity.member.Member
 import dev.study.domain.ticketHistory.TicketHistoryType
+import dev.study.entity.member.Member
 import dev.study.entity.movie.Movie
-import jakarta.persistence.Entity
-import jakarta.persistence.EnumType
-import jakarta.persistence.Enumerated
-import jakarta.persistence.FetchType
-import jakarta.persistence.GeneratedValue
-import jakarta.persistence.GenerationType
-import jakarta.persistence.Id
-import jakarta.persistence.ManyToOne
-import jakarta.persistence.Table
+import jakarta.persistence.*
 import java.time.LocalDateTime
 
 @Entity
@@ -31,7 +22,4 @@ open class TicketHistory(
 
     @ManyToOne(fetch = FetchType.LAZY)
     open var movie: Movie,
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    open var seat: Seat
 )
