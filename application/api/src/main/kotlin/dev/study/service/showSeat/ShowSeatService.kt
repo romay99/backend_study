@@ -1,5 +1,6 @@
 package dev.study.service.showSeat
 
+import dev.study.dto.showSeat.ShowSeatDto
 import dev.study.repository.showSeatRepository.ShowSeatRepository
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -18,5 +19,12 @@ class ShowSeatService (
         val nowTime = LocalDateTime.now()
         return showSeatRepository.removePastShowSeats(nowTime)
     }
+
+    /**
+     * 특정 영화 스케줄에 대해 예매 가능한 좌석 보여주는 메서드
+     */
+    fun getAvailableShowSeats(movieId: Long) : List<ShowSeatDto>
+        = showSeatRepository.findAvailableShowSeats(movieId)
+        .map { ShowSeatDto.from(it) }
 }
 
