@@ -1,6 +1,6 @@
 package dev.study.config
 
-import dev.study.impression.event.ImpressionEvent
+import dev.study.event.impression.ImpressionEvent
 import org.apache.kafka.clients.producer.ProducerConfig
 import org.apache.kafka.common.serialization.StringSerializer
 import org.springframework.beans.factory.annotation.Value
