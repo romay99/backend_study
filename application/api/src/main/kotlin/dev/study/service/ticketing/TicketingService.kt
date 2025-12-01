@@ -10,6 +10,7 @@ import dev.study.entity.transactionHistory.TransactionHistory
 import dev.study.exception.member.MemberNotFoundException
 import dev.study.exception.member.NotEnoughAmountException
 import dev.study.exception.seat.SeatAlreadyOccupiedException
+import dev.study.exception.seat.SeatNotAvailableException
 import dev.study.exception.seat.SeatNotFoundException
 import dev.study.logging.logger
 import dev.study.repository.member.MemberRepository
@@ -66,6 +67,11 @@ class TicketingService(
                 screenNumber = dto.screenNumber)
                 ?: throw SeatNotFoundException("존재하지 않는 좌석입니다.")
 
+            // 점유 가능한 좌석이 아닐때 예외 발생
+            if (showSeat.status != SeatStatus.AVAILABLE){
+                throw SeatNotAvailableException("예매가 불가능한 좌석입니다")
+            }
+
             showSeat.status = SeatStatus.RESERVING // 좌석 상태 점유중으로 변경
 
             // 5분간 TTL 을 이용한 좌석 자동점유를 위한 KEY
@@ -101,19 +107,24 @@ class TicketingService(
 
         val seatKey = "hold:seat:$movieId:$screenNumber:$col:$num"
         val bucket = redissonClient.getBucket<String>(seatKey)
-        val value = bucket.get()
+        val value = bucket.get() // memberId (Long)
 
         // 좌석 점유 정보가 틀리거나, 다른 사용자가 접근한다면 예외 발생
         if(value == null || value != memberId.toString()){
             throw SeatNotFoundException("존재하지 않는 좌석 정보입니다")
         }
 
-        member.amount -= TICKET_PRICE // 사용자 계좌에서 돈 차감 , Dirty Checking 으로 Update
-
         val showSeat = showSeatRepository.findShowSeat(movieId, col, num, screenNumber)
             ?: throw SeatNotFoundException("존재하지 않는 좌석 정보입니다")
 
-        showSeat.status = SeatStatus.RESERVED
+        // 좌석이 점유 상태가 아닐때 예외 발생
+        if (showSeat.status != SeatStatus.RESERVING){
+            throw SeatNotAvailableException("예매할 수 없는 좌석입니다")
+        }
+
+        showSeat.status = SeatStatus.RESERVED // 좌석 상태 변경
+
+        member.amount -= TICKET_PRICE // 사용자 계좌에서 돈 차감 , Dirty Checking 으로 Update
 
         // 티켓팅 내역 저장
         val ticketHistory = TicketHistory(member = member, movie = showSeat.movie)
@@ -127,4 +138,7 @@ class TicketingService(
         bucket.delete()
         logger.info("reserveTicket:$movieId:$screenNumber:$col:$num")
     }
+
+    fun getAvailableShowSeats(movieId: Long)
+        = showSeatRepository.findAvailableShowSeats(movieId)
 }

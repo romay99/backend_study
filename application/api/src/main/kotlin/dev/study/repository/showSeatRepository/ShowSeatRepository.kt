@@ -18,4 +18,15 @@ interface ShowSeatRepository : JpaRepository<ShowSeat, Long> {
         AND ss.seat.screenNumber=:screenNumber
     """)
     fun findShowSeat(movieId: Long, col: String, num: Int, screenNumber: Int): ShowSeat?
+
+    @Query("""
+        SELECT ss
+        FROM ShowSeat ss
+        JOIN FETCH ss.movie
+        JOIN FETCH ss.seat
+        WHERE 1=1 
+        AND ss.movie.id=:movieId
+        AND ss.status = 'AVAILABLE'
+    """)
+    fun findAvailableShowSeats(movieId: Long) : List<ShowSeat>
 }
