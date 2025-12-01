@@ -12,5 +12,5 @@ data class CampaignUpdateDto(
     val movieId: Long? = null,
     val movieTitle: String? = null,
     val bannerImageUrl: String? = null,
-    val targetUrl: String? = null
+    val targetUrl: String? = null,
 )

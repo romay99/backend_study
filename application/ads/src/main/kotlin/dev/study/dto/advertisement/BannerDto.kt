@@ -8,18 +8,17 @@ data class BannerDto(
     val movieId: Long,
     val movieTitle: String,
     val bannerImageUrl: String,
-    val targetUrl: String?
+    val targetUrl: String?,
 ) {
     companion object {
-        fun from(campaign: Campaign): BannerDto {
-            return BannerDto(
+        fun from(campaign: Campaign): BannerDto =
+            BannerDto(
                 campaignId = requireNotNull(campaign.id),
                 campaignName = campaign.name,
                 movieId = campaign.movieId,
                 movieTitle = campaign.movieTitle,
                 bannerImageUrl = campaign.bannerImageUrl,
-                targetUrl = campaign.targetUrl
+                targetUrl = campaign.targetUrl,
             )
-        }
     }
 }
