@@ -3,3 +3,6 @@ spring:
     url: jdbc:postgresql://localhost:5433/ads
     username: ads
     password: ads
+
+  kafka:
+    bootstrap-servers: localhost:9092
