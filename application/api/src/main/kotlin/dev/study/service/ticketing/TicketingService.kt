@@ -90,6 +90,9 @@ class TicketingService(
         return showSeat
     }
 
+    /**
+     * 좌석 예매하는 메서드
+     */
     @Transactional
     fun reserveTicket(dto: TicketingTryDto) {
         val col = dto.col
@@ -139,6 +142,9 @@ class TicketingService(
         logger.info("reserveTicket:$movieId:$screenNumber:$col:$num")
     }
 
+    /**
+     * 특정 영화 스케줄에 대해 예매 가능한 좌석 보여주는 메서드
+     */
     fun getAvailableShowSeats(movieId: Long)
         = showSeatRepository.findAvailableShowSeats(movieId)
 }

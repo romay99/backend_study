@@ -2,7 +2,9 @@ package dev.study.repository.showSeatRepository
 
 import dev.study.entity.showSeat.ShowSeat
 import org.springframework.data.jpa.repository.JpaRepository
+import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.Query
+import java.time.LocalDateTime
 
 interface ShowSeatRepository : JpaRepository<ShowSeat, Long> {
 
@@ -29,4 +31,11 @@ interface ShowSeatRepository : JpaRepository<ShowSeat, Long> {
         AND ss.status = 'AVAILABLE'
     """)
     fun findAvailableShowSeats(movieId: Long) : List<ShowSeat>
+
+    @Query("""
+        DELETE FROM ShowSeat ss
+        WHERE ss.createdAt < :nowTime
+    """)
+    @Modifying
+    fun removePastShowSeats(nowTime: LocalDateTime): Int
 }
