@@ -27,4 +27,3 @@ class ShowSeatService (
         = showSeatRepository.findAvailableShowSeats(movieId)
         .map { ShowSeatDto.from(it) }
 }
-

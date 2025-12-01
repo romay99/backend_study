@@ -9,7 +9,7 @@ import java.time.LocalDateTime
 interface ShowSeatRepository : JpaRepository<ShowSeat, Long> {
 
     @Query("""
-        SELECT ss 
+        SELECT ss
         FROM ShowSeat ss
         JOIN FETCH ss.movie
         JOIN FETCH ss.seat
@@ -26,7 +26,7 @@ interface ShowSeatRepository : JpaRepository<ShowSeat, Long> {
         FROM ShowSeat ss
         JOIN FETCH ss.movie
         JOIN FETCH ss.seat
-        WHERE 1=1 
+        WHERE 1=1
         AND ss.movie.id=:movieId
         AND ss.status = 'AVAILABLE'
     """)
