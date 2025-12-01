@@ -7,5 +7,5 @@ import org.springframework.boot.runApplication
 class AdsApplication
 
 fun main(args: Array<String>) {
-	runApplication<AdsApplication>(*args)
+    runApplication<AdsApplication>(*args)
 }
