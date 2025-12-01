@@ -16,11 +16,11 @@ data class CampaignResponseDto(
     val bannerImageUrl: String,
     val targetUrl: String?,
     val createdAt: LocalDateTime,
-    val updatedAt: LocalDateTime
+    val updatedAt: LocalDateTime,
 ) {
     companion object {
-        fun from(campaign: Campaign): CampaignResponseDto {
-            return CampaignResponseDto(
+        fun from(campaign: Campaign): CampaignResponseDto =
+            CampaignResponseDto(
                 id = requireNotNull(campaign.id),
                 name = campaign.name,
                 description = campaign.description,
@@ -31,9 +31,8 @@ data class CampaignResponseDto(
                 movieTitle = campaign.movieTitle,
                 bannerImageUrl = campaign.bannerImageUrl,
                 targetUrl = campaign.targetUrl,
-                createdAt = campaign.createdAt,
-                updatedAt = campaign.updatedAt
+                createdAt = requireNotNull(campaign.createdAt),
+                updatedAt = requireNotNull(campaign.updatedAt),
             )
-        }
     }
 }
