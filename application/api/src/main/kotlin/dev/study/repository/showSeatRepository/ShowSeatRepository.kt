@@ -30,7 +30,7 @@ interface ShowSeatRepository : JpaRepository<ShowSeat, Long> {
         AND ss.movie.id=:movieId
         AND ss.status = 'AVAILABLE'
     """)
-    fun findAvailableShowSeats(movieId: Long) : List<ShowSeat>
+    fun findAvailableShowSeats(movieId: Long): List<ShowSeat>
 
     @Query("""
         DELETE FROM ShowSeat ss

@@ -8,7 +8,7 @@ import org.redisson.api.RedissonClient
 import org.springframework.stereotype.Component
 
 @Component
-class RedisEventListener (
+class RedisEventListener(
     private val showSeatRepository: ShowSeatRepository,
     private val redissonClient: RedissonClient
 ) {
@@ -28,7 +28,7 @@ class RedisEventListener (
 
                 val seat = showSeatRepository.findShowSeat(movieId, col, num, screenNumber)
 
-                if (seat != null){
+                if (seat != null) {
                     seat.status = SeatStatus.AVAILABLE
                     showSeatRepository.save(seat)
                     logger.info("TTL 만료: 좌석 $movieId-$col-$num 상태를 AVAILABLE로 복귀")

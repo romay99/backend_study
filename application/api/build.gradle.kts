@@ -1,5 +1,3 @@
-import org.springframework.boot.gradle.tasks.bundling.BootJar
-
 plugins {
     kotlin("jvm") version "1.9.23"
     kotlin("plugin.spring") version "1.9.23"
@@ -7,6 +5,7 @@ plugins {
 
     id("org.springframework.boot") version "3.5.7"
     id("io.spring.dependency-management") version "1.1.7"
+    id("io.gitlab.arturbosch.detekt") version "1.23.6"
 }
 
 dependencies {
@@ -17,6 +16,7 @@ dependencies {
     runtimeOnly("org.postgresql:postgresql")
     implementation("io.lettuce:lettuce-core")
     implementation("org.redisson:redisson-spring-boot-starter:3.27.2")
+    detektPlugins("io.gitlab.arturbosch.detekt:detekt-formatting:1.23.6")
 
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")

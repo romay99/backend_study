@@ -6,7 +6,12 @@ import dev.study.dto.ticketing.TicketingTryDto
 import dev.study.service.showSeat.ShowSeatService
 import dev.study.service.ticketing.TicketingService
 import org.springframework.http.ResponseEntity
-import org.springframework.web.bind.annotation.*
+import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.RequestBody
+import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RequestParam
+import org.springframework.web.bind.annotation.RestController
 
 @RestController
 @RequestMapping("/ticketing")
@@ -28,7 +33,7 @@ class TicketingController(
     }
 
     @GetMapping()
-    fun getAvailableShowSeats(@RequestParam movieId:Long): ResponseEntity<List<ShowSeatDto>> {
+    fun getAvailableShowSeats(@RequestParam movieId: Long): ResponseEntity<List<ShowSeatDto>> {
         val seats = showSeatService.getAvailableShowSeats(movieId)
         return ResponseEntity.ok(seats)
     }

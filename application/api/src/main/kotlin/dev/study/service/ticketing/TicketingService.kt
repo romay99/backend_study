@@ -32,7 +32,10 @@ class TicketingService(
     private val showSeatRepository: ShowSeatRepository
 ) {
     companion object {
-        private val TICKET_PRICE = 15000
+        private const val TICKET_PRICE = 15000
+        private const val KEY_EXPIRATION_MINUTES = 5L
+        private const val LOCK_WAIT_TIME = 3L
+        private const val LOCK_LEASE_TIME = 5L
     }
     private val logger = logger()
 
@@ -40,12 +43,12 @@ class TicketingService(
      * 좌석 점유하는 메서드
      */
     @Transactional
-    fun holdSeat(dto: SeatLockDTO) : ShowSeat? {
+    fun holdSeat(dto: SeatLockDTO): ShowSeat? {
         val col = dto.col
         val num = dto.num
         val memberId = dto.memberId
         val screenNumber = dto.screenNumber
-        val showSeat : ShowSeat?
+        val showSeat: ShowSeat?
         val movieId = dto.movieId
 
         val lock =
@@ -53,8 +56,14 @@ class TicketingService(
             redissonClient.getLock("lock:seat:$movieId:$screenNumber:$col:$num")
 
         try {
-            val locked = lock.tryLock(3,5, TimeUnit.SECONDS) // Lock 획득 대기시간 3초, 획득 성공시 5초 동안 점유
-            if (!locked){
+            // Lock 획득 대기시간 3초, 획득 성공시 5초 동안 점유
+            val locked = lock.tryLock(
+                LOCK_WAIT_TIME,
+                LOCK_LEASE_TIME,
+                TimeUnit.SECONDS
+            )
+
+            if (!locked) {
                 // Lock 획득 실패시 예외 발생
                 throw SeatAlreadyOccupiedException("이미 선택된 좌석입니다.")
             }
@@ -64,11 +73,12 @@ class TicketingService(
                 movieId = dto.movieId,
                 col = dto.col,
                 num = dto.num,
-                screenNumber = dto.screenNumber)
+                screenNumber = dto.screenNumber
+            )
                 ?: throw SeatNotFoundException("존재하지 않는 좌석입니다.")
 
             // 점유 가능한 좌석이 아닐때 예외 발생
-            if (showSeat.status != SeatStatus.AVAILABLE){
+            if (showSeat.status != SeatStatus.AVAILABLE) {
                 throw SeatNotAvailableException("예매가 불가능한 좌석입니다")
             }
 
@@ -79,7 +89,7 @@ class TicketingService(
             // hold:seat:${movieId}:${screenNumber}:${col}:${num}
             val seatKey = "hold:seat:$movieId:$screenNumber:$col:$num"
             val bucket = redissonClient.getBucket<String>(seatKey)
-            bucket.set(memberId.toString(), Duration.ofMinutes(5))
+            bucket.set(memberId.toString(), Duration.ofMinutes(KEY_EXPIRATION_MINUTES))
             logger.info("hold:seat:$movieId:$screenNumber:$col:$num BY $memberId")
         } finally {
             // 최종적으로 Lock 이 존재한다면 Lock 해제해주기
@@ -113,7 +123,7 @@ class TicketingService(
         val value = bucket.get() // memberId (Long)
 
         // 좌석 점유 정보가 틀리거나, 다른 사용자가 접근한다면 예외 발생
-        if(value == null || value != memberId.toString()){
+        if (value == null || value != memberId.toString()) {
             throw SeatNotFoundException("존재하지 않는 좌석 정보입니다")
         }
 
@@ -121,7 +131,7 @@ class TicketingService(
             ?: throw SeatNotFoundException("존재하지 않는 좌석 정보입니다")
 
         // 좌석이 점유 상태가 아닐때 예외 발생
-        if (showSeat.status != SeatStatus.RESERVING){
+        if (showSeat.status != SeatStatus.RESERVING) {
             throw SeatNotAvailableException("예매할 수 없는 좌석입니다")
         }
 

@@ -16,7 +16,7 @@ import java.time.LocalDateTime
 
 @Entity
 @Table(name = "show_seat")
-open class ShowSeat (
+open class ShowSeat(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     open var id: Long? = null,

@@ -1,7 +1,7 @@
 package dev.study.entity.transactionHistory
 
-import dev.study.entity.member.Member
 import dev.study.domain.transactionHistory.TransactionHistoryType
+import dev.study.entity.member.Member
 import jakarta.persistence.Entity
 import jakarta.persistence.EnumType
 import jakarta.persistence.Enumerated
