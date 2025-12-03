@@ -20,18 +20,29 @@ class TicketingController(
     private val showSeatService: ShowSeatService
 ) {
 
+    /**
+     * Redisson 분산락을 이용한 좌석 점유 메서드
+     * 좌석 점유 성공 / 예매 2가지 로직으로 분리
+     */
     @PostMapping("/seat")
     fun holdSeat(@RequestBody dto: SeatLockDTO): ResponseEntity<String> {
         ticketingService.holdSeat(dto)
         return ResponseEntity.ok().build()
     }
 
+    /**
+     * 좌석 예매하는 메서드
+     * 점유 상태인 좌석만 예매 가능하다
+     */
     @PostMapping("/reserve")
     fun reserveTicket(@RequestBody dto: TicketingTryDto): ResponseEntity<String> {
         ticketingService.reserveTicket(dto)
         return ResponseEntity.ok().build()
     }
 
+    /**
+     * 하나의 상영 스케줄에 관해서 예매 가능한 좌석들을 조회하는 메서드
+     */
     @GetMapping()
     fun getAvailableShowSeats(@RequestParam movieId: Long): ResponseEntity<List<ShowSeatDto>> {
         val seats = showSeatService.getAvailableShowSeats(movieId)

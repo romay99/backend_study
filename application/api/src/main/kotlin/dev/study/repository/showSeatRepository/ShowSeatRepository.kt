@@ -34,7 +34,7 @@ interface ShowSeatRepository : JpaRepository<ShowSeat, Long> {
 
     @Query("""
         DELETE FROM ShowSeat ss
-        WHERE ss.createdAt < :nowTime
+        WHERE ss.movie.time < :nowTime
     """)
     @Modifying
     fun removePastShowSeats(nowTime: LocalDateTime): Int
