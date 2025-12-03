@@ -38,4 +38,14 @@ interface ShowSeatRepository : JpaRepository<ShowSeat, Long> {
     """)
     @Modifying
     fun removePastShowSeats(nowTime: LocalDateTime): Int
+
+    @Query("""
+        SELECT ss
+        FROM ShowSeat ss
+        JOIN FETCH ss.movie
+        JOIN FETCH ss.seat
+        WHERE 1=1
+        AND ss.id = :id
+    """)
+    fun findShowSeatById(id: Long): ShowSeat?
 }

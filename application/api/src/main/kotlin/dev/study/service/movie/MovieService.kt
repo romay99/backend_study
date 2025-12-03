@@ -11,7 +11,7 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
 @Service
-class MovieService (
+class MovieService(
     private val movieRepository: MovieRepository,
     private val showSeatRepository: ShowSeatRepository,
     private val seatRepository: SeatRepository

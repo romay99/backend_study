@@ -1,7 +1,10 @@
 package dev.study.service.ticketing
 
 import dev.study.domain.showSeat.SeatStatus
+import dev.study.domain.ticketHistory.TicketHistoryType
+import dev.study.domain.transactionHistory.TransactionHistoryType
 import dev.study.dto.seat.SeatLockDTO
+import dev.study.dto.ticketing.TicketingCancelDto
 import dev.study.dto.ticketing.TicketingTryDto
 import dev.study.entity.member.Member
 import dev.study.entity.showSeat.ShowSeat
@@ -12,16 +15,19 @@ import dev.study.exception.member.NotEnoughAmountException
 import dev.study.exception.seat.SeatAlreadyOccupiedException
 import dev.study.exception.seat.SeatNotAvailableException
 import dev.study.exception.seat.SeatNotFoundException
+import dev.study.exception.ticketing.SeatCannotCancelException
 import dev.study.logging.logger
 import dev.study.repository.member.MemberRepository
 import dev.study.repository.showSeatRepository.ShowSeatRepository
 import dev.study.repository.ticketHistory.TicketHistoryRepository
 import dev.study.repository.transactionHistory.TransactionHistoryRepository
 import org.redisson.api.RedissonClient
+import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.Duration
 import java.util.concurrent.TimeUnit
+import kotlin.jvm.optionals.getOrNull
 
 @Service
 class TicketingService(
@@ -112,7 +118,7 @@ class TicketingService(
         val movieId = dto.movieId
 
         // 사용자 데이터 가져오기
-        val member: Member = memberRepository.findById(dto.memberId).orElse(null)
+        val member: Member = memberRepository.findById(dto.memberId).getOrNull()
             ?: throw MemberNotFoundException("존재하지 않는 사용자입니다.")
 
         // 사용자 잔액이 부족할 경우 예외 발생
@@ -144,11 +150,46 @@ class TicketingService(
         ticketHistoryRepository.save(ticketHistory)
 
         // 돈 거래 내역 저장
-        val transactionHistory = TransactionHistory(amount = TICKET_PRICE, member = member)
+        val transactionHistory = TransactionHistory(amount = -TICKET_PRICE, member = member)
         transactionHistoryRepository.save(transactionHistory)
 
         // redisson key 삭제
         bucket.delete()
         logger.info("reserveTicket:$movieId:$screenNumber:$col:$num")
+    }
+
+    @Transactional
+    fun cancelTicket(dto: TicketingCancelDto) {
+        val showSeat = showSeatRepository.findShowSeatById(dto.showSeatId)
+            ?: throw SeatNotFoundException("존재하지 않는 좌석 정보입니다.")
+
+        // 예매된 상태가 아닌 좌석을 취소하려할때 예외 발생
+        if (showSeat.status != SeatStatus.RESERVED) {
+            throw SeatCannotCancelException("취소할 수 없는 좌석입니다.")
+        }
+
+        showSeat.status = SeatStatus.AVAILABLE // 예매 가능 좌석으로 상태 변경
+
+        val member = memberRepository.findByIdOrNull(dto.memberId)
+            ?: throw MemberNotFoundException("존재하지 않는 사용자 정보입니다.")
+
+        member.amount += TICKET_PRICE // 계좌 돈 추가
+
+        // 티켓팅 취소 내역 저장
+        val ticketHistory = TicketHistory(
+            member = member,
+            movie = showSeat.movie,
+            type = TicketHistoryType.CANCEL
+        )
+        ticketHistoryRepository.save(ticketHistory)
+
+        // 돈 거래 취소 내역 저장
+        val transactionHistory = TransactionHistory(
+            amount = TICKET_PRICE,
+            member = member,
+            type = TransactionHistoryType.CANCEL
+        )
+        transactionHistoryRepository.save(transactionHistory)
+        logger.info("cancelTicket:${dto.movieId} member = ${dto.memberId}")
     }
 }

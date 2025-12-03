@@ -2,6 +2,7 @@ package dev.study.controller.ticketing
 
 import dev.study.dto.seat.SeatLockDTO
 import dev.study.dto.showSeat.ShowSeatDto
+import dev.study.dto.ticketing.TicketingCancelDto
 import dev.study.dto.ticketing.TicketingTryDto
 import dev.study.service.showSeat.ShowSeatService
 import dev.study.service.ticketing.TicketingService
@@ -37,6 +38,12 @@ class TicketingController(
     @PostMapping("/reserve")
     fun reserveTicket(@RequestBody dto: TicketingTryDto): ResponseEntity<String> {
         ticketingService.reserveTicket(dto)
+        return ResponseEntity.ok().build()
+    }
+
+    @PostMapping("/cancel")
+    fun cancelTicket(@RequestBody dto: TicketingCancelDto): ResponseEntity<String> {
+        ticketingService.cancelTicket(dto)
         return ResponseEntity.ok().build()
     }
 
