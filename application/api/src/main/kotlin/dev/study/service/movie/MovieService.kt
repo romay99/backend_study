@@ -1,5 +1,6 @@
 package dev.study.service.movie
 
+import dev.study.dto.movie.MovieScheduleSearchDto
 import dev.study.dto.movie.MovieScheduleUploadDto
 import dev.study.entity.movie.Movie
 import dev.study.entity.showSeat.ShowSeat
@@ -33,4 +34,11 @@ class MovieService(
         showSeatRepository.saveAll(showSeatList)
         logger.info("${dto.name}, ${dto.time} Movie schedule uploaded successfully")
     }
+
+    fun getMovieSchedules(dto: MovieScheduleSearchDto) =
+        movieRepository.findMovieSchedules(
+            dto.startTime,
+            dto.endTime,
+            dto.name
+        )
 }

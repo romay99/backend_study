@@ -5,4 +5,3 @@ import org.springframework.web.bind.annotation.ResponseStatus
 
 @ResponseStatus(value = HttpStatus.BAD_REQUEST)
 class SeatCannotCancelException(message: String) : RuntimeException(message)
-

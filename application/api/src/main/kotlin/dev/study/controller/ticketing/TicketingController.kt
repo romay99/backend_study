@@ -41,6 +41,10 @@ class TicketingController(
         return ResponseEntity.ok().build()
     }
 
+    /**
+     * 좌석 예매 취소하는 메서드
+     * 예매된 건에서만 작동한다
+     */
     @PostMapping("/cancel")
     fun cancelTicket(@RequestBody dto: TicketingCancelDto): ResponseEntity<String> {
         ticketingService.cancelTicket(dto)
