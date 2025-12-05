@@ -91,7 +91,6 @@ class ImpressionPublisher(
             batch.forEach { event ->
                 kafkaTemplate.send(TOPIC, event.campaignId.toString(), event)
             }
-            logger.debug("Successfully sent batch of {} impression events to Kafka", batch.size)
         } catch (e: Exception) {
             logger.error("Failed to send batch of {} impression events to Kafka", batch.size, e)
         }
