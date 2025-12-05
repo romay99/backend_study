@@ -3,17 +3,19 @@ package dev.study.service.impression
 import dev.study.event.impression.ImpressionEvent
 import jakarta.annotation.PostConstruct
 import jakarta.annotation.PreDestroy
+import org.slf4j.LoggerFactory
+import org.springframework.kafka.core.KafkaTemplate
+import org.springframework.stereotype.Service
 import java.util.concurrent.ArrayBlockingQueue
 import java.util.concurrent.BlockingQueue
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
-import org.springframework.kafka.core.KafkaTemplate
-import org.springframework.stereotype.Service
 
 @Service
 class ImpressionPublisher(
     private val kafkaTemplate: KafkaTemplate<String, ImpressionEvent>,
 ) {
+    private val logger = LoggerFactory.getLogger(ImpressionPublisher::class.java)
     private val queue: BlockingQueue<ImpressionEvent> = ArrayBlockingQueue(QUEUE_CAPACITY)
     private val running = AtomicBoolean(false)
     private lateinit var batchProcessor: Thread
@@ -46,7 +48,10 @@ class ImpressionPublisher(
     }
 
     fun publish(event: ImpressionEvent) {
-        queue.offer(event)
+        val offered = queue.offer(event)
+        if (!offered) {
+            logger.error("Impression queue full (capacity: $QUEUE_CAPACITY), dropping event for campaign ${event.campaignId}")
+        }
     }
 
     private fun processBatches() {
@@ -71,7 +76,8 @@ class ImpressionPublisher(
                 }
             } catch (_: InterruptedException) {
                 if (!running.get()) break
-            } catch (_: Exception) {
+            } catch (e: Exception) {
+                logger.error("Error processing impression batch", e)
             }
         }
 
@@ -85,7 +91,9 @@ class ImpressionPublisher(
             batch.forEach { event ->
                 kafkaTemplate.send(TOPIC, event.campaignId.toString(), event)
             }
-        } catch (_: Exception) {
+            logger.debug("Successfully sent batch of {} impression events to Kafka", batch.size)
+        } catch (e: Exception) {
+            logger.error("Failed to send batch of {} impression events to Kafka", batch.size, e)
         }
     }
 
