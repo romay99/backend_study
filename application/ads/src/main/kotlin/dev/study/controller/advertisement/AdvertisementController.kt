@@ -10,22 +10,21 @@ import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 
 @RestController
-@RequestMapping("/advertisements")
+@RequestMapping("/api/v1/advertisements")
 class AdvertisementController(
-    private val advertisementService: AdvertisementService
+    private val advertisementService: AdvertisementService,
 ) {
-
     @GetMapping("/banner")
-    fun getSingleBanner(): ResponseEntity<SingleBannerResponseDto> {
-        val response = advertisementService.getSingleBanner()
-        return ResponseEntity.ok(response)
-    }
+    fun getSingleBanner(): ResponseEntity<SingleBannerResponseDto> =
+        ResponseEntity
+            .ok()
+            .body(advertisementService.getSingleBanner())
 
     @GetMapping("/banners")
     fun getMultipleBanners(
-        @RequestParam(defaultValue = "5") count: Int
-    ): ResponseEntity<MultipleBannersResponseDto> {
-        val response = advertisementService.getMultipleBanners(count)
-        return ResponseEntity.ok(response)
-    }
+        @RequestParam(defaultValue = "5") count: Int,
+    ): ResponseEntity<MultipleBannersResponseDto> =
+        ResponseEntity
+            .ok()
+            .body(advertisementService.getMultipleBanners(count))
 }
