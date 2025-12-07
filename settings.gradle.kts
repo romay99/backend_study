@@ -1,6 +1,8 @@
 rootProject.name = "study"
 
 include("application:api")
-include("application:ads")
 
-include("simulation:simulation-ads")
+include(
+    "application:ads:ads-api",
+    "application:ads:ads-simulation",
+)
