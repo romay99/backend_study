@@ -1,11 +1,11 @@
 plugins {
-    kotlin("jvm") version "1.9.23"
-    kotlin("plugin.spring") version "1.9.23"
-    kotlin("plugin.jpa") version "1.9.23"
+    kotlin("jvm") version "2.0.21"
+    kotlin("plugin.spring") version "2.0.21"
+    kotlin("plugin.jpa") version "2.0.21"
 
     id("org.springframework.boot") version "3.5.7"
     id("io.spring.dependency-management") version "1.1.7"
-    id("io.gitlab.arturbosch.detekt") version "1.23.6"
+    id("io.gitlab.arturbosch.detekt") version "1.23.8"
 }
 
 dependencies {
@@ -16,7 +16,7 @@ dependencies {
     runtimeOnly("org.postgresql:postgresql")
     implementation("io.lettuce:lettuce-core")
     implementation("org.redisson:redisson-spring-boot-starter:3.27.2")
-    detektPlugins("io.gitlab.arturbosch.detekt:detekt-formatting:1.23.6")
+    detektPlugins("io.gitlab.arturbosch.detekt:detekt-formatting:1.23.8")
 
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
