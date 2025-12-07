@@ -6,8 +6,8 @@ import dev.study.dto.advertisement.MultipleBannersResponseDto
 import dev.study.dto.advertisement.SingleBannerResponseDto
 import dev.study.event.impression.ImpressionEvent
 import dev.study.repository.campaign.CampaignRepository
-import dev.study.service.impression.ImpressionPublisher
 import org.springframework.data.domain.PageRequest
+import org.springframework.kafka.core.KafkaTemplate
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.Instant
@@ -15,8 +15,12 @@ import java.time.Instant
 @Service
 class AdvertisementService(
     private val campaignRepository: CampaignRepository,
-    private val impressionPublisher: ImpressionPublisher,
+    private val kafkaTemplate: KafkaTemplate<String, ImpressionEvent>,
 ) {
+    companion object {
+        private const val TOPIC = "ads.v1.banner.impressions"
+    }
+
     @Transactional(readOnly = true)
     fun getSingleBanner(): SingleBannerResponseDto {
         val campaign =
@@ -24,7 +28,7 @@ class AdvertisementService(
                 ?: return SingleBannerResponseDto(banner = null)
 
         campaign.id?.run {
-            impressionPublisher.publish(ImpressionEvent(this, Instant.now()))
+            kafkaTemplate.send(TOPIC, this.toString(), ImpressionEvent(this, Instant.now()))
         }
 
         return SingleBannerResponseDto(banner = BannerDto.from(campaign))
@@ -43,7 +47,7 @@ class AdvertisementService(
         val activeCampaigns = campaignRepository.findByStatus(CampaignStatus.ACTIVE, pageable)
 
         activeCampaigns.forEach { campaign ->
-            campaign.id?.run { impressionPublisher.publish(ImpressionEvent(this, Instant.now())) }
+            campaign.id?.run { kafkaTemplate.send(TOPIC, this.toString(), ImpressionEvent(this, Instant.now())) }
         }
 
         val banners = activeCampaigns.map { BannerDto.from(it) }
