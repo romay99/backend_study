@@ -26,7 +26,7 @@ services:
     environment:
       DYNAMIC_CONFIG_ENABLED: "true"
     ports:
-      - "8080:8080"
+      - "5080:8080"
     configs:
       - source: dynamic_config.yaml
         target: /etc/kafkaui/dynamic_config.yaml
