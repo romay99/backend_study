@@ -4,6 +4,7 @@ import dev.study.dto.movie.MovieScheduleSearchDto
 import dev.study.dto.movie.MovieScheduleUploadDto
 import dev.study.entity.movie.Movie
 import dev.study.service.movie.MovieService
+import io.swagger.v3.oas.annotations.Operation
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.GetMapping
@@ -23,12 +24,14 @@ class MovieController(
      * 영화 스케줄이 생성될때 예매 가능한 좌석 (ShowSeat) 데이터들이 insert 된다
      */
     @PostMapping()
+    @Operation(summary = "영화 스케줄 업로드", description = "영화 상영 스케줄을 업로드합니다.")
     fun uploadMovieSchedule(@RequestBody dto: MovieScheduleUploadDto): ResponseEntity<String> {
         movieService.uploadMovieSchedule(dto)
         return ResponseEntity("Movie schedule uploaded successfully", HttpStatus.OK)
     }
 
     @GetMapping()
+    @Operation(summary = "영화 조회", description = "영화 상영 스케줄을 조회합니다.")
     fun getMovieSchedules(@RequestParam dto: MovieScheduleSearchDto): ResponseEntity<List<Movie>> {
         val list = movieService.getMovieSchedules(dto)
         return ResponseEntity.ok(list)
