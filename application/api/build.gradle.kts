@@ -16,6 +16,7 @@ dependencies {
     implementation("io.lettuce:lettuce-core")
     implementation("org.redisson:redisson-spring-boot-starter:3.27.2")
     detektPlugins("io.gitlab.arturbosch.detekt:detekt-formatting:1.23.8")
+    implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.6")
 
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
