@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice
 class GlobalExceptionHandler {
 
     private val logger = logger()
+
     /**
      * 전역 예외 처리
      */

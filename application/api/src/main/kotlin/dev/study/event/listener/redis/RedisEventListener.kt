@@ -1,4 +1,4 @@
-package dev.study.eventListener.redis
+package dev.study.event.listener.redis
 
 import dev.study.domain.showSeat.SeatStatus
 import dev.study.logging.logger

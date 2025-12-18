@@ -1,15 +1,13 @@
 package dev.study.service.ticketing
 
 import dev.study.domain.showSeat.SeatStatus
-import dev.study.domain.ticketHistory.TicketHistoryType
-import dev.study.domain.transactionHistory.TransactionHistoryType
 import dev.study.dto.seat.SeatLockDTO
 import dev.study.dto.ticketing.TicketingCancelDto
 import dev.study.dto.ticketing.TicketingTryDto
 import dev.study.entity.member.Member
 import dev.study.entity.showSeat.ShowSeat
-import dev.study.entity.ticketHistory.TicketHistory
-import dev.study.entity.transactionHistory.TransactionHistory
+import dev.study.event.listener.TicketingCancelEvent
+import dev.study.event.listener.TicketingSuccessEvent
 import dev.study.exception.member.MemberNotFoundException
 import dev.study.exception.member.NotEnoughAmountException
 import dev.study.exception.seat.SeatAlreadyOccupiedException
@@ -19,9 +17,8 @@ import dev.study.exception.ticketing.SeatCannotCancelException
 import dev.study.logging.logger
 import dev.study.repository.member.MemberRepository
 import dev.study.repository.showSeatRepository.ShowSeatRepository
-import dev.study.repository.ticketHistory.TicketHistoryRepository
-import dev.study.repository.transactionHistory.TransactionHistoryRepository
 import org.redisson.api.RedissonClient
+import org.springframework.context.ApplicationEventPublisher
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -32,10 +29,9 @@ import kotlin.jvm.optionals.getOrNull
 @Service
 class TicketingService(
     private val memberRepository: MemberRepository,
-    private val ticketHistoryRepository: TicketHistoryRepository,
-    private val transactionHistoryRepository: TransactionHistoryRepository,
     private val redissonClient: RedissonClient,
-    private val showSeatRepository: ShowSeatRepository
+    private val showSeatRepository: ShowSeatRepository,
+    private val applicationEventPublisher: ApplicationEventPublisher
 ) {
     companion object {
         private const val TICKET_PRICE = 15000
@@ -145,17 +141,14 @@ class TicketingService(
 
         member.amount -= TICKET_PRICE // 사용자 계좌에서 돈 차감 , Dirty Checking 으로 Update
 
-        // 티켓팅 내역 저장
-        val ticketHistory = TicketHistory(member = member, movie = showSeat.movie)
-        ticketHistoryRepository.save(ticketHistory)
-
-        // 돈 거래 내역 저장
-        val transactionHistory = TransactionHistory(amount = -TICKET_PRICE, member = member)
-        transactionHistoryRepository.save(transactionHistory)
-
         // redisson key 삭제
         bucket.delete()
         logger.info("reserveTicket:$movieId:$screenNumber:$col:$num")
+
+        // 로그 저장은 event 기반 처리
+        applicationEventPublisher.publishEvent(
+            TicketingSuccessEvent(memberId, movieId)
+        )
     }
 
     @Transactional
@@ -175,21 +168,11 @@ class TicketingService(
 
         member.amount += TICKET_PRICE // 계좌 돈 추가
 
-        // 티켓팅 취소 내역 저장
-        val ticketHistory = TicketHistory(
-            member = member,
-            movie = showSeat.movie,
-            type = TicketHistoryType.CANCEL
-        )
-        ticketHistoryRepository.save(ticketHistory)
-
-        // 돈 거래 취소 내역 저장
-        val transactionHistory = TransactionHistory(
-            amount = TICKET_PRICE,
-            member = member,
-            type = TransactionHistoryType.CANCEL
-        )
-        transactionHistoryRepository.save(transactionHistory)
         logger.info("cancelTicket:${dto.movieId} member = ${dto.memberId}")
+
+        // 로그 저장은 event 기반 처리
+        applicationEventPublisher.publishEvent(
+            TicketingCancelEvent(dto.memberId, dto.movieId)
+        )
     }
 }
