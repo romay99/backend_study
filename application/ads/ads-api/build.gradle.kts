@@ -9,6 +9,8 @@ plugins {
 dependencies {
     implementation(platform("io.arrow-kt:arrow-stack:2.2.0"))
 
+    implementation(project(":application:ads:ads-core"))
+
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("org.springframework.kafka:spring-kafka")
