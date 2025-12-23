@@ -18,7 +18,6 @@ class AdvertisementService(
     private val campaignRepository: CampaignRepository,
     private val kafkaTemplate: KafkaTemplate<String, ImpressionEvent>,
 ) {
-
     @Transactional(readOnly = true)
     fun getSingleBanner(): SingleBannerResponseDto {
         val campaign =
