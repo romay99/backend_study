@@ -9,8 +9,11 @@ plugins {
 dependencies {
     implementation(platform("io.arrow-kt:arrow-stack:2.2.0"))
 
-    implementation("org.springframework.boot:spring-boot-starter-data-jpa")
-    implementation("org.springframework.boot:spring-boot-starter-web")
+    implementation(project(":application:ads:ads-core"))
+
+    annotationProcessor("org.springframework.boot:spring-boot-configuration-processor")
+
+    implementation("org.springframework.boot:spring-boot-starter-batch")
     implementation("org.springframework.kafka:spring-kafka")
 
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
@@ -18,9 +21,12 @@ dependencies {
     implementation("io.arrow-kt:arrow-fx-coroutines")
     implementation("org.jetbrains.kotlin:kotlin-reflect")
 
+    implementation("net.datafaker:datafaker:2.5.3")
+
     runtimeOnly("org.postgresql:postgresql")
 
     testImplementation("org.springframework.boot:spring-boot-starter-test")
+    testImplementation("org.springframework.batch:spring-batch-test")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
 
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
@@ -30,12 +36,6 @@ kotlin {
     compilerOptions {
         freeCompilerArgs.addAll("-Xjsr305=strict")
     }
-}
-
-allOpen {
-    annotation("jakarta.persistence.Entity")
-    annotation("jakarta.persistence.MappedSuperclass")
-    annotation("jakarta.persistence.Embeddable")
 }
 
 detekt {
