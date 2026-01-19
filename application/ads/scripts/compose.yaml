@@ -1,0 +1,109 @@
+name: ads
+
+services:
+  postgres:
+    image: postgres:18
+    environment:
+      POSTGRES_USER: ads
+      POSTGRES_PASSWORD: ads
+      POSTGRES_DB: ads
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test:
+        - "CMD"
+        - "pg_isready"
+        - "-U"
+        - "ads"
+    volumes:
+      - ./postgres/docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d
+
+  kafka:
+    image: apache/kafka:4.1.1
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka.ads.orb.local:9092
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka.ads.orb.local:9093
+    ports:
+      - "9092:9092"
+
+  kafbat-ui:
+    image: ghcr.io/kafbat/kafka-ui:2e62ea1
+    environment:
+      DYNAMIC_CONFIG_ENABLED: "true"
+    configs:
+      - source: dynamic_config.yaml
+        target: /etc/kafkaui/dynamic_config.yaml
+    depends_on:
+      - kafka
+    ports:
+      - "18080:8080"
+
+  namenode:
+    image: apache/hadoop:3.4.2
+    command:
+      - "hdfs"
+      - "namenode"
+    env_file:
+      - ./hadoop/config
+    environment:
+      ENSURE_NAMENODE_DIR: "/tmp/hadoop-root/dfs/name"
+    ports:
+      - "8020:8020"
+
+  datanode:
+    image: apache/hadoop:3.4.2
+    command:
+      - "hdfs"
+      - "datanode"
+    env_file:
+      - ./hadoop/config
+    ports:
+      - "9866:9866"
+
+  metastore:
+    build:
+      dockerfile: ./hadoop/Containerfile.metastore
+    environment:
+      SERVICE_NAME: metastore
+      DB_DRIVER: postgres
+      SERVICE_OPTS: |-
+        -Djavax.jdo.option.ConnectionDriverName=org.postgresql.Driver
+        -Djavax.jdo.option.ConnectionURL=jdbc:postgresql://postgres.ads.orb.local:5432/metastore
+        -Djavax.jdo.option.ConnectionUserName=ads
+        -Djavax.jdo.option.ConnectionPassword=ads
+    configs:
+      - source: metastore-site.xml
+        target: /opt/hive/conf/metastore-site.xml
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+configs:
+  dynamic_config.yaml:
+    content: |
+      kafka:
+        clusters:
+          - name: local
+            bootstrap-servers: kafka.ads.orb.local:9092
+
+  metastore-site.xml:
+    content: |
+      <configuration>
+        <property>
+          <name>hive.metastore.pre.event.listeners</name>
+          <value>org.apache.hadoop.hive.ql.security.authorization.AuthorizationPreEventListener</value>
+        </property>
+        <property>
+          <name>hive.security.metastore.authorization.manager</name>
+          <value>org.apache.hadoop.hive.ql.security.authorization.StorageBasedAuthorizationProvider</value>
+        </property>
+        <property>
+          <name>fs.defaultFS</name>
+          <value>hdfs://namenode.ads.orb.local:8020</value>
+        </property>
+      </configuration>

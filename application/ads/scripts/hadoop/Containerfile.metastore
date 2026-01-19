@@ -1,0 +1,4 @@
+FROM apache/hive:standalone-metastore-4.2.0
+
+RUN mkdir -p /tmp/ext-jars && \
+        curl https://jdbc.postgresql.org/download/postgresql-42.7.8.jar -o /tmp/ext-jars/postgresql.jar
